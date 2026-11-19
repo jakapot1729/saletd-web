@@ -1,27 +1,430 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SaleTD - Desktop POS &amp; Inventory</title>
-  <style>
-    body { font-family: sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #222; }
-    h1 { color: #1a73e8; }
-    footer { margin-top: 40px; font-size: 0.9em; color: #555; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaleTD - ระบบขายหน้าร้าน (POS) &amp; พอร์ทัลดูยอดขายนอกร้าน</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <h1>SaleTD</h1>
-  <p>โปรแกรมขายหน้าร้าน (POS) สำหรับจัดการสต๊อกสินค้า ระบบสมาชิก และบันทึกยอดขายแบบ Offline-First บน Windows</p>
-  <h2>ความสามารถหลัก</h2>
-  <ul>
-    <li>บันทึกการขาย ตัดสต๊อกสินค้า และสะสมแต้มสมาชิกบนฐานข้อมูล SQLite ในเครื่อง</li>
-    <li>ซิงค์ข้อมูลยอดขายเข้า Google Sheets ของผู้ใช้งานอัตโนมัติเมื่อออนไลน์</li>
-    <li>สำรองไฟล์ฐานข้อมูลเข้า Google Drive ของผู้ใช้งานอย่างปลอดภัย</li>
-  </ul>
-  <p>ติดต่อผู้พัฒนา: <a href="mailto:jakapot1729@gmail.com">jakapot1729@gmail.com</a></p>
-  <footer>
-    <a href="privacy.html">นโยบายความเป็นส่วนตัว (Privacy Policy)</a>
-  </footer>
+    <!-- Top Header -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <div class="brand-badge">TD</div>
+                <div>
+                    <div class="brand-title" id="hdrStoreName">SaleTD</div>
+                    <div class="brand-sub">ระบบขายหน้าร้าน Offline-First &amp; ดูข้อมูลผ่าน Google Sheets</div>
+                </div>
+            </div>
+
+            <div class="user-controls">
+                <div id="userBadge" class="user-pill hidden">
+                    <img id="userAvatar" class="user-avatar" alt="avatar">
+                    <span id="userEmailText">-</span>
+                </div>
+                <button id="btnSwitchAccount" class="btn btn-outline btn-sm hidden" type="button">สลับบัญชี Gmail</button>
+                <button id="btnSignOut" class="btn btn-outline btn-sm hidden" type="button">ออกจากระบบ</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- View 1: Landing + Google Login Gate (ยังคงข้อมูล SaleTD และ Privacy Policy เดิมไว้ครบถ้วน) -->
+        <section id="loginView">
+            <div class="landing-grid">
+                <div class="card">
+                    <h1 class="landing-title">SaleTD</h1>
+                    <p class="landing-lead">
+                        โปรแกรมขายหน้าร้าน (POS) สำหรับจัดการสต๊อกสินค้า ระบบสมาชิก และบันทึกยอดขายแบบ Offline-First บน Windows
+                    </p>
+
+                    <h2 style="font-size: 17px; margin: 0 0 8px;">ความสามารถหลัก</h2>
+                    <ul class="feature-list">
+                        <li>บันทึกการขาย ตัดสต๊อกสินค้า และสะสมแต้มสมาชิกบนฐานข้อมูล SQLite ในเครื่อง</li>
+                        <li>ซิงค์ข้อมูลยอดขายเข้า Google Sheets ของผู้ใช้งานอัตโนมัติเมื่อออนไลน์</li>
+                        <li>สำรองไฟล์ฐานข้อมูลเข้า Google Drive ของผู้ใช้งานอย่างปลอดภัย</li>
+                        <li>พอร์ทัลดู Dashboard คาดการณ์สินค้าขายดี/ควรเพิ่ม/ควรลด รายการขาย และ Stock จากนอกร้าน</li>
+                    </ul>
+
+                    <p style="font-size: 13.5px; margin: 0 0 10px;">
+                        ติดต่อผู้พัฒนา: <a id="devEmailLink" href="mailto:jakapot1729@gmail.com">jakapot1729@gmail.com</a>
+                    </p>
+                    <p style="font-size: 13.5px; margin: 0;">
+                        <a id="privacyLinkMain" href="privacy.html">นโยบายความเป็นส่วนตัว (Privacy Policy)</a>
+                    </p>
+                </div>
+
+                <div class="card auth-card">
+                    <h2>เข้าสู่ระบบผู้จัดการร้าน (นอกร้าน)</h2>
+                    <p class="auth-desc">
+                        กรุณาเข้าสู่ระบบด้วย <strong>Gmail ที่เป็นเจ้าของ หรือได้รับแชร์ไฟล์ Google Sheet ของร้าน</strong>
+                        (<code>SaleTD_รายงานยอดขาย_...</code>) เท่านั้น เพื่อความปลอดภัยของข้อมูลร้าน
+                    </p>
+
+                    <button id="btnGoogleSignIn" class="btn btn-google" type="button">
+                        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
+                        <span>เข้าสู่ระบบด้วย Gmail (Sign in with Google)</span>
+                    </button>
+
+                    <div id="authStatusBox" class="alert alert-info hidden"></div>
+
+                    <!-- Optional setup box shown only when config.js still has placeholder CLIENT_ID -->
+                    <div id="clientIdSetupBox" class="setup-box hidden">
+                        <strong>⚙️ ยังไม่ได้ตั้งค่า Web Client ID ในไฟล์ <code>config.js</code></strong>
+                        <div style="margin-top: 4px; color: #78350f;">
+                            นำ OAuth Client ID (ประเภท Web application ที่ใส่ Origin <code>https://jakapot1729.github.io</code>) มาวางเพื่อทดสอบทันที หรือใส่ถาวรใน <code>config.js</code>
+                        </div>
+                        <div class="setup-row">
+                            <input id="txtManualClientId" class="input" type="text" placeholder="xxxx.apps.googleusercontent.com">
+                            <button id="btnSaveManualClientId" class="btn btn-primary btn-sm" type="button">บันทึก</button>
+                        </div>
+                    </div>
+
+                    <div id="manualSheetAccessBox" class="setup-box hidden" style="background: #f8fafc; border-color: #cbd5e1;">
+                        <strong>🔎 ไม่พบไฟล์ Sheet อัตโนมัติ?</strong>
+                        <div style="margin-top: 4px; color: #475569;">
+                            หากไฟล์ถูกแชร์มาแล้วค้นหาไม่พบ ให้วางลิงก์หรือ Spreadsheet ID ของ Google Sheet ร้านได้ (Google จะตรวจสิทธิ์ของ Gmail นี้จริง)
+                        </div>
+                        <div class="setup-row">
+                            <input id="txtManualSheetId" class="input" type="text" placeholder="วาง URL หรือ Spreadsheet ID">
+                            <button id="btnLoadManualSheet" class="btn btn-primary btn-sm" type="button">เปิดดู</button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 14px; font-size: 12px; color: var(--muted);">
+                        🔒 ระบบขอสิทธิ์ <strong>อ่านอย่างเดียว (Read-Only)</strong> ไม่แก้ไขข้อมูลใน Sheet และไม่เก็บข้อมูลยอดขายไว้บนเซิร์ฟเวอร์ GitHub
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View 2: Authenticated Portal (Dashboard + Sales + Stock) -->
+        <section id="portalView" class="hidden">
+            <div class="tabs-bar">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="dashboard" type="button">📊 Dashboard &amp; คาดการณ์</button>
+                    <button class="tab-btn" data-tab="sales" type="button">🧾 รายการขาย</button>
+                    <button class="tab-btn" data-tab="stock" type="button">📦 Stock สินค้า</button>
+                </div>
+
+                <div class="sheet-controls">
+                    <select id="selSheetFile" class="select" title="เลือกไฟล์ Google Sheet ตามปี"></select>
+                    <button id="btnRefreshSheet" class="btn btn-outline btn-sm" type="button">🔄 รีเฟรชข้อมูล</button>
+                    <a id="lnkOpenSheet" class="btn btn-outline btn-sm" href="#" target="_blank" rel="noopener">📄 เปิด Google Sheet</a>
+                </div>
+            </div>
+
+            <div id="portalStatusBanner" class="alert alert-info hidden" style="margin-bottom: 12px;"></div>
+
+            <!-- TAB 1: DASHBOARD & FORECAST -->
+            <div id="tab-dashboard" class="tab-panel">
+                <div class="card" style="padding: 14px 16px;">
+                    <div class="toolbar-row" style="justify-content: space-between; margin-bottom: 0;">
+                        <div>
+                            <strong style="font-size: 16px;">📊 สรุปภาพรวม &amp; คาดการณ์อนาคต</strong>
+                            <div id="dashSubtitle" class="section-sub">กำลังโหลดข้อมูล...</div>
+                        </div>
+                        <div class="toolbar-row" style="margin-bottom: 0;">
+                            <select id="selHistoryDays" class="select">
+                                <option value="14">ย้อนหลัง 14 วัน</option>
+                                <option value="30">ย้อนหลัง 30 วัน</option>
+                                <option value="60" selected>ย้อนหลัง 60 วัน (แนะนำ)</option>
+                                <option value="90">ย้อนหลัง 90 วัน</option>
+                            </select>
+                            <select id="selForecastDays" class="select">
+                                <option value="7">คาดการณ์ 7 วันหน้า</option>
+                                <option value="14">คาดการณ์ 14 วันหน้า</option>
+                                <option value="30" selected>คาดการณ์ 30 วันหน้า (แนะนำ)</option>
+                            </select>
+                            <input id="txtDashFilter" class="input" type="search" placeholder="กรองสินค้าใน Dashboard..." style="width: 190px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div id="kpiHistTitle" class="kpi-title">ยอดขายจริง (60 วัน)</div>
+                        <div id="kpiHistSales" class="kpi-value" style="color: var(--primary);">฿0</div>
+                        <div id="kpiHistSub" class="kpi-sub">0 บิล | เฉลี่ย ฿0/วัน</div>
+                        <div id="kpiTodayMonth" class="kpi-extra">วันนี้ ฿0 | เดือนนี้ ฿0</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-title">กำไรขั้นต้นประมาณการ</div>
+                        <div id="kpiGrossProfit" class="kpi-value" style="color: var(--success);">฿0</div>
+                        <div id="kpiGrossMargin" class="kpi-sub">อัตรากำไร 0%</div>
+                        <div id="kpiOpExpense" class="kpi-extra">รายจ่ายดำเนินงาน ฿0</div>
+                    </div>
+
+                    <div class="kpi-card forecast">
+                        <div id="kpiForeTitle" class="kpi-title">🔮 คาดการณ์ 30 วันหน้า</div>
+                        <div id="kpiForeSales" class="kpi-value" style="color: var(--violet);">฿0</div>
+                        <div id="kpiForeRange" class="kpi-sub">ช่วง ฿0 – ฿0</div>
+                        <div style="margin-top: 5px;"><span id="kpiTrendBadge" class="badge badge-violet">-</span></div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-title">📦 มูลค่าทุนสต๊อกคงเหลือ</div>
+                        <div id="kpiInvCost" class="kpi-value">฿0</div>
+                        <div id="kpiInvRetail" class="kpi-sub">มูลค่าขาย ฿0 | 0 ชิ้น</div>
+                        <div id="kpiInvHealth" class="kpi-extra" style="color: var(--warning);">หมดสต๊อก 0 | ใกล้หมดอายุ 0</div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-title">⚖️ แผนปรับสินค้าแนะนำ</div>
+                        <div class="split-mini">
+                            <div class="mini-box inc">
+                                <span>ควรเพิ่ม</span>
+                                <strong id="kpiIncCount">0 ตัว</strong>
+                                <span id="kpiIncBudget">งบ ~฿0</span>
+                            </div>
+                            <div class="mini-box red">
+                                <span>ควรลด</span>
+                                <strong id="kpiRedCount">0 ตัว</strong>
+                                <span id="kpiRedCap">ทุนจม ฿0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-grid">
+                    <div class="card" style="margin-bottom: 0;">
+                        <div class="section-header">
+                            <div>
+                                <h3>📈 กราฟยอดขายจริงรายวัน &amp; คาดการณ์อนาคต</h3>
+                                <div class="section-sub">ชี้/แตะที่แท่งเพื่อดูยอดขายจริงหรือยอดคาดการณ์</div>
+                            </div>
+                            <div class="legend-row" style="margin-bottom: 0;">
+                                <span><span class="legend-dot" style="background:#2563eb;"></span>ยอดขายจริง</span>
+                                <span><span class="legend-dot" style="background:#8b5cf6;"></span>คาดการณ์</span>
+                                <span><span class="legend-dot" style="background:#f59e0b; height:3px;"></span>แนวโน้มเฉลี่ย</span>
+                            </div>
+                        </div>
+                        <div id="forecastChartContainer" class="chart-wrap"></div>
+                        <div id="chartHintText" class="section-sub" style="margin-top: 6px;"></div>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 0;">
+                        <div class="section-header">
+                            <div>
+                                <h3>📅 ฤดูกาลขายดีรายวันในสัปดาห์</h3>
+                                <div class="section-sub">ยอดขายเฉลี่ยวันจันทร์ – อาทิตย์</div>
+                            </div>
+                        </div>
+                        <div id="weekdayStatsContainer"></div>
+                        <div id="tomorrowNoteBox" class="alert alert-info" style="margin-top: 10px; font-size: 12.5px; font-weight: 600;"></div>
+                    </div>
+                </div>
+
+                <!-- Executive Insights -->
+                <div class="card" style="margin-top: 14px;">
+                    <div class="section-header">
+                        <h3>🧭 บทสรุปผู้บริหาร &amp; แนวโน้มร้าน</h3>
+                    </div>
+                    <div id="executiveBulletsContainer" class="insights-list"></div>
+                </div>
+
+                <!-- Predicted Best-Sellers -->
+                <div class="card">
+                    <div class="section-header">
+                        <div>
+                            <h3>🔥 คาดการณ์สินค้าที่จะขายดีในอนาคต</h3>
+                            <div class="section-sub">จัดอันดับจากความเร็วขายล่าสุด แนวโน้มเติบโต และความสม่ำเสมอ</div>
+                        </div>
+                        <span id="pillBestCount" class="badge badge-info">0 รายการ</span>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>สินค้า</th>
+                                    <th class="text-right">ขายย้อนหลัง</th>
+                                    <th class="text-right">ความเร็ว/วัน</th>
+                                    <th>แนวโน้ม</th>
+                                    <th class="text-right">คาดการณ์ขายได้</th>
+                                    <th class="text-right">กำไรคาดการณ์</th>
+                                    <th>ความพร้อมสต๊อก</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyBestSellers"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Products to Increase -->
+                <div class="card" style="border-color: #a7f3d0;">
+                    <div class="section-header">
+                        <div>
+                            <h3 style="color: #065f46;">📈 สินค้าที่ควร "เพิ่ม" (เติมสต๊อก / สั่งซื้อเพิ่ม)</h3>
+                            <div class="section-sub">สินค้าที่สต๊อกไม่พอรองรับยอดคาดการณ์ หรือกำลังเติบโตเร็ว</div>
+                        </div>
+                        <div class="toolbar-row" style="margin-bottom: 0;">
+                            <span id="pillIncSummary" class="badge badge-ok">0 รายการ</span>
+                            <button id="btnCopyReorder" class="btn btn-outline btn-sm" type="button">📋 คัดลอกรายการสั่งซื้อ</button>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ความสำคัญ</th>
+                                    <th>สินค้า</th>
+                                    <th class="text-right">คงเหลือ</th>
+                                    <th>พอขายอีก</th>
+                                    <th class="text-right">คาดการณ์ใช้</th>
+                                    <th class="text-right">ควรเพิ่ม</th>
+                                    <th class="text-right">งบประมาณ</th>
+                                    <th>เหตุผลวิเคราะห์</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyIncrease"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Products to Reduce -->
+                <div class="card" style="border-color: #fde68a;">
+                    <div class="section-header">
+                        <div>
+                            <h3 style="color: #92400e;">📉 สินค้าที่ควร "ลด" (ชะลอสั่งซื้อ / ลดสต๊อก / ระบายด่วน)</h3>
+                            <div class="section-sub">สินค้าเสี่ยงหมดอายุค้างสต๊อก ขายไม่ออกทุนจม ยอดขายขาลง หรือกำไรต่ำ</div>
+                        </div>
+                        <span id="pillRedSummary" class="badge badge-warn">0 รายการ</span>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ความเสี่ยง</th>
+                                    <th>สินค้า</th>
+                                    <th class="text-right">คงเหลือ</th>
+                                    <th>สต๊อกพอ</th>
+                                    <th class="text-right">ทุนจม/เสี่ยง</th>
+                                    <th>คำแนะนำ &amp; เหตุผล</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyReduce"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: SALES HISTORY -->
+            <div id="tab-sales" class="tab-panel hidden">
+                <div class="card">
+                    <div class="section-header">
+                        <div>
+                            <h3>🧾 ประวัติรายการขายทั้งหมด (จากแท็บ Sales)</h3>
+                            <div id="salesSummaryLine" class="section-sub">0 บิล</div>
+                        </div>
+                    </div>
+                    <div class="toolbar-row">
+                        <input id="txtSalesSearch" class="input" type="search" placeholder="ค้นหาเลขที่บิล, ชื่อลูกค้า, เบอร์โทร, สินค้า..." style="flex: 1; min-width: 220px;">
+                        <select id="selSalesRange" class="select">
+                            <option value="today">วันนี้</option>
+                            <option value="7">7 วันล่าสุด</option>
+                            <option value="30" selected>30 วันล่าสุด</option>
+                            <option value="all">ทั้งหมดในปีนี้</option>
+                        </select>
+                        <select id="selSalesStatus" class="select">
+                            <option value="active" selected>เฉพาะบิลปกติ</option>
+                            <option value="all">ทุกสถานะ (รวมยกเลิกบิล)</option>
+                            <option value="void">เฉพาะบิลที่ยกเลิก</option>
+                        </select>
+                    </div>
+                    <div class="table-scroll" style="max-height: 580px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>เลขที่บิล</th>
+                                    <th>วันที่-เวลา</th>
+                                    <th>ลูกค้า / สมาชิก</th>
+                                    <th>รายการสินค้า</th>
+                                    <th>ส่วนลด / โปรโมชัน</th>
+                                    <th class="text-right">ยอดสุทธิ</th>
+                                    <th>สถานะ</th>
+                                    <th>รายละเอียด</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodySales"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: STOCK & LOTS -->
+            <div id="tab-stock" class="tab-panel hidden">
+                <div class="card">
+                    <div class="section-header">
+                        <div>
+                            <h3>📦 รายการสต๊อกสินค้าและล็อตวันหมดอายุ</h3>
+                            <div id="stockSummaryLine" class="section-sub">0 รายการ</div>
+                        </div>
+                    </div>
+                    <div class="toolbar-row">
+                        <input id="txtStockSearch" class="input" type="search" placeholder="ค้นหาบาร์โค้ด หรือ ชื่อสินค้า..." style="flex: 1; min-width: 220px;">
+                        <select id="selStockFilter" class="select">
+                            <option value="all" selected>สินค้าทั้งหมด</option>
+                            <option value="low">สต๊อกใกล้หมด / หมด (&lt; 5)</option>
+                            <option value="out">สินค้าหมดสต๊อก (0)</option>
+                            <option value="expiry">ใกล้หมดอายุ / หมดอายุ (≤ 30 วัน)</option>
+                            <option value="food">เฉพาะของกิน</option>
+                            <option value="pack">เฉพาะสินค้าแพ็ค</option>
+                        </select>
+                    </div>
+                    <div class="table-scroll" style="max-height: 580px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>บาร์โค้ด</th>
+                                    <th>ชื่อสินค้า</th>
+                                    <th>ประเภท</th>
+                                    <th class="text-right">ทุน/หน่วย</th>
+                                    <th class="text-right">ราคาขาย</th>
+                                    <th class="text-right">คงเหลือ</th>
+                                    <th class="text-right">มูลค่าทุน</th>
+                                    <th>วันหมดอายุ / ล็อต</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyStock"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bill / Lot Detail Modal -->
+    <div id="detailModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="section-header" style="margin-bottom: 12px;">
+                <h3 id="modalTitle">รายละเอียด</h3>
+                <button id="btnCloseModal" class="btn btn-outline btn-sm" type="button">ปิด</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div>
+            <strong>SaleTD POS</strong> • ติดต่อผู้พัฒนา:
+            <a id="footerEmailLink" href="mailto:jakapot1729@gmail.com">jakapot1729@gmail.com</a>
+        </div>
+        <div>
+            <a id="privacyLinkFooter" href="privacy.html">นโยบายความเป็นส่วนตัว (Privacy Policy)</a>
+        </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
